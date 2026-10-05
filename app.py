@@ -1,4 +1,3 @@
-
 import os
 import sqlite3
 from datetime import datetime
@@ -124,9 +123,16 @@ def search_rakuten(keyword, application_id, access_key, affiliate_id, hits=30,
     if referer and not referer.endswith("/"):
         referer += "/"
 
+    # Rakuten's 2026 API security check may require Origin in addition to
+    # Referer. The error name HTTP_REFERRER_MISSING is misleading in some
+    # server-side environments: adding only Referer can still return 403.
+    origin = referer.rstrip("/")
+
     headers = {
         "accessKey": access_key,
         "Referer": referer,
+        "Origin": origin,
+        "User-Agent": "Mozilla/5.0 (compatible; RakutenAIAffiliate/1.0)",
     }
     r = requests.get(RAKUTEN_ENDPOINT, params=params, headers=headers, timeout=30)
     r.raise_for_status()
