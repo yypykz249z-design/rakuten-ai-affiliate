@@ -111,7 +111,22 @@ def search_rakuten(keyword, application_id, access_key, affiliate_id, hits=30,
     if postage_free:
         params["postageFlag"] = 1
 
-    headers = {"accessKey": access_key}
+    # Rakuten Web Service access control may require an HTTP Referer when
+    # the app is registered as a web application. Streamlit server-to-server
+    # requests do not automatically carry the browser's Referer header, so
+    # we send the deployed app URL explicitly. It can be overridden via the
+    # RAKUTEN_REFERER secret/environment variable if the app URL changes.
+    referer = secret_or_env(
+        "RAKUTEN_REFERER",
+        "https://rakuten-ai-affiliate-h2lj9darp4kpoxfkanyqcg.streamlit.app/",
+    )
+    if referer and not referer.endswith("/"):
+        referer += "/"
+
+    headers = {
+        "accessKey": access_key,
+        "Referer": referer,
+    }
     r = requests.get(RAKUTEN_ENDPOINT, params=params, headers=headers, timeout=30)
     r.raise_for_status()
     payload = r.json()
